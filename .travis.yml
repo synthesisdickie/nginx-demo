@@ -1,0 +1,37 @@
+sudo: required
+
+dist: xenial
+
+services:
+  - docker
+
+branches:
+  exclude:
+    - /^ADR-.*$/ 
+
+jobs:
+  include:
+    - stage: build
+      name: "Build Docker Image"
+      script:
+        - TAG=`grep SNAPSHOT pom.xml | sed 's|[<,>,/,version ]||g'`
+        - sed -i -- "s/VER/${TAG}/g" app/index.html
+        - docker build -t vaibhavthakur/nginx-demo:$TAG .
+        - echo "$DOCKERPASS" | docker login -u vaibhavthakur --password-stdin
+        - docker push vaibhavthakur/nginx-demo:$TAG
+        - sed -i -- "s/TAG/${TAG}/g" demo-nginx.yaml 
+
+addons: 
+  artifacts: 
+    paths:
+      - ./demo-nginx.yaml
+    target_paths: 
+      - /demo-app/${TRAVIS_REPO_SLUG}/${TRAVIS_BUILD_NUMBER}/
+    debug: true
+
+
+
+
+
+
+
